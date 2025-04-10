@@ -1,8 +1,12 @@
 import argparse
 import json
 import re
-from vllm import LLM, SamplingParams
+# from vllm import LLM, SamplingParams
 from transformers import AutoTokenizer
+from openai import OpenAI
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from tqdm import tqdm
+import os
 
 def parse_response(response):
     pattern = r"```sql\s*(.*?)\s*```"
@@ -42,6 +46,8 @@ if __name__ == '__main__':
         stop_token_ids = [96539]
     elif "Meta-Llama-" in opt.pretrained_model_name_or_path:
         stop_token_ids = [128009, 128001]
+    elif "Llama-" in opt.pretrained_model_name_or_path:
+        stop_token_ids = [128009, 128001]
     elif "granite-" in opt.pretrained_model_name_or_path:
         stop_token_ids = [0] # <|end_of_text|> is the end token of granite-3.1 and granite-code
     elif "starcoder2-" in opt.pretrained_model_name_or_path:
@@ -56,7 +62,9 @@ if __name__ == '__main__':
         print("Use Qwen2.5's stop tokens by default.")
         stop_token_ids = [151645]
 
-    print("stop_token_ids:", stop_token_ids)
+    # get stop token as text
+    stop_tokens = [tokenizer.decode(id) for id in stop_token_ids]
+    print("stop_token_ids:", stop_tokens)
     
     max_model_len = 8192 # used to allocate KV cache memory in advance
     max_input_len = 6144
@@ -64,23 +72,31 @@ if __name__ == '__main__':
     
     print("max_model_len:", max_model_len)
     print("temperature:", opt.temperature)
-    sampling_params = SamplingParams(
-        temperature = opt.temperature, 
-        max_tokens = max_output_len,
-        n = opt.n,
-        stop_token_ids = stop_token_ids
-    )
 
-    llm = LLM(
-        model = opt.pretrained_model_name_or_path,
-        dtype = "bfloat16", 
-        tensor_parallel_size = opt.tensor_parallel_size,
-        max_model_len = max_model_len,
-        gpu_memory_utilization = 0.92,
-        swap_space = 42,
-        enforce_eager = True,
-        disable_custom_all_reduce = True,
-        trust_remote_code = True
+    # unused vllm code: we use endpoints
+    # sampling_params = SamplingParams(
+    #     temperature = opt.temperature, 
+    #     max_tokens = max_output_len,
+    #     n = opt.n,
+    #     stop_token_ids = stop_token_ids
+    # )
+
+    # llm = LLM(
+    #     model = opt.pretrained_model_name_or_path,
+    #     dtype = "bfloat16", 
+    #     tensor_parallel_size = opt.tensor_parallel_size,
+    #     max_model_len = max_model_len,
+    #     gpu_memory_utilization = 0.92,
+    #     swap_space = 42,
+    #     enforce_eager = True,
+    #     disable_custom_all_reduce = True,
+    #     trust_remote_code = True
+    # )
+
+    # openai compatible client
+    client = OpenAI(
+        api_key="sk-vllm-1326",
+        base_url="http://34.53.49.33:5152/v1"
     )
     
     chat_prompts = [tokenizer.apply_chat_template(
@@ -88,10 +104,40 @@ if __name__ == '__main__':
         add_generation_prompt = True, tokenize = False
     ) for data in input_dataset]
 
-    outputs = llm.generate(chat_prompts, sampling_params)
+    def run_generation(prompt, idx):
+        response = client.completions.create(
+            prompt=prompt,
+            model=opt.pretrained_model_name_or_path,
+            temperature=opt.temperature,
+            max_tokens=max_output_len,
+            n=opt.n,
+            stop=stop_tokens
+        )
+        return response.choices, idx
+
+    # outputs = llm.generate(chat_prompts, sampling_params)
+
+    pbar = tqdm(total=len(chat_prompts), desc=f"Infer")
+    outputs = [None] * len(chat_prompts)
+    with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
+        futures = [
+            executor.submit(run_generation, prompt, idx)
+            for idx, prompt in enumerate(chat_prompts)
+        ]
+        
+        for future in as_completed(futures):
+            try:
+                output, idx = future.result()
+                outputs[idx] = output
+            except Exception as e:
+                print(f"Error generating chat: {e}")
+            finally:
+                pbar.update(1)
     
     results = []
     for data, output in zip(input_dataset, outputs):
+        if output is None: # skip failed generations
+            continue
         responses = [o.text for o in output.outputs]
         sqls  = [parse_response(response) for response in responses]
         
@@ -99,5 +145,6 @@ if __name__ == '__main__':
         data["pred_sqls"] = sqls
         results.append(data)
 
+    os.makedirs(os.path.dirname(opt.output_file), exist_ok=True)
     with open(opt.output_file, "w", encoding = "utf-8") as f:
         f.write(json.dumps(results, indent = 2, ensure_ascii = False))

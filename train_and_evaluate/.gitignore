@@ -1,0 +1,6 @@
+data/
+test_suite_sql_eval/
+results/
+evaluation_results/
+scratch/
+tmp/
