@@ -167,7 +167,7 @@ def evaluate_spider2sql(gold_result_dir, eval_standard_dict, gold, pred_sqls, db
     assert len(gold) == len(pred_sqls) == len(eval_ids)
 
     output_results = []
-    for instance_id in tqdm(eval_ids):
+    for g, instance_id in tqdm(zip(gold, eval_ids)):
         print(f">>>Evaluating {instance_id}...")
         if instance_id not in instance_id2pred_sql_query:
             raise ValueError("instance id '{instance_id}' not in instance_id2pred_sql_query")
@@ -177,18 +177,29 @@ def evaluate_spider2sql(gold_result_dir, eval_standard_dict, gold, pred_sqls, db
         error_info = None
         pred_sql_query = instance_id2pred_sql_query[instance_id]
         db_file_path = os.path.join(db_path, instance_id2db_id[instance_id], instance_id2db_id[instance_id] + ".sqlite")
+        
+        # get gold pds
+        pattern = re.compile(rf'^{re.escape(instance_id)}(_[a-z])?\.csv$')
+        all_files = os.listdir(gold_result_dir)
+        csv_files = [file for file in all_files if pattern.match(file)]
+
+        if len(csv_files) == 1:
+            gold_pd = pd.read_csv(os.path.join(gold_result_dir, f"{instance_id}.csv"))     
+        elif len(csv_files) > 1:
+            gold_pds = [pd.read_csv(os.path.join(gold_result_dir, file)) for file in csv_files]
+            score = compare_multi_pandas_table(pred_pd, gold_pds, eval_standard_dict.get(instance_id)['condition_cols'], eval_standard_dict.get(instance_id)['ignore_order'])
+            if score == 0 and error_info is None:
+                error_info = 'Result Error'
+        
+        # get pred executaion result
         exe_flag, dbms_error_info = get_sqlite_result(db_file_path, pred_sql_query, temp_dir, f"{instance_id}_pred.csv")
         if exe_flag == False:
             score = 0
             error_info = dbms_error_info
+            pred_pd = None
         else:
             pred_pd = pd.read_csv(os.path.join(temp_dir, f"{instance_id}_pred.csv"))  
-            pattern = re.compile(rf'^{re.escape(instance_id)}(_[a-z])?\.csv$')
-
-            all_files = os.listdir(gold_result_dir)
-            csv_files = [file for file in all_files if pattern.match(file)]
             if len(csv_files) == 1:
-                gold_pd = pd.read_csv(os.path.join(gold_result_dir, f"{instance_id}.csv"))
                 try:
                     score = compare_pandas_table(pred_pd, gold_pd, eval_standard_dict.get(instance_id)['condition_cols'], eval_standard_dict.get(instance_id)['ignore_order'])
                 except Exception as e:
@@ -197,35 +208,52 @@ def evaluate_spider2sql(gold_result_dir, eval_standard_dict, gold, pred_sqls, db
                     error_info = 'Python Script Error:' + str(e)
                 if score == 0 and error_info is None:
                     error_info = 'Result Error'     
-                # print("score:", score)
-                # print("pred_pd:\n", pred_pd)
-                # print("gold_pd:\n", gold_pd)
-
             elif len(csv_files) > 1:
-                gold_pds = [pd.read_csv(os.path.join(gold_result_dir, file)) for file in csv_files]
                 score = compare_multi_pandas_table(pred_pd, gold_pds, eval_standard_dict.get(instance_id)['condition_cols'], eval_standard_dict.get(instance_id)['ignore_order'])
                 if score == 0 and error_info is None:
                     error_info = 'Result Error'
-                # print("score:", score)
-                # print("pred_pd:\n", pred_pd)
-                # print("gold_pds:\n", gold_pds)
 
+        # log results
+        assert(g["instance_id"] == instance_id)
         output_results.append(
             {
                 "instance_id": instance_id, 
                 "score": score,
+                "question": g["question"],
+                "external_knowledge": g["external_knowledge"],
                 "pred_sql": pred_sql_query,
-                "error_info": error_info
+                "error_info": error_info,
+                "gold_pds": gold_pd if len(csv_files) == 1 else gold_pds,
+                "pred_pds": pred_pd,
             }
         )
 
     print({item['instance_id']: item['score'] for item in output_results})
     final_acc = sum([item['score'] for item in output_results]) / len(output_results)
     print(f"Final score: {final_acc}")
-    print("Correct Instance ID:")
+    print("Correct Instances:")
     for item in output_results:
         if item["score"] == 1:
-            print(item["instance_id"])
+            print("####################################################")
+            print(f"instance_id: {item['instance_id']}")
+            print(f"## QUESTION ##\n{item['question']}\n")
+            print(f"## EXTERNAL KNOWLEDGE ##:\n{item['external_knowledge']}\n")
+            print(f"## PREDICTED SQL ##:\n{item['pred_sql']}\n")
+            print(f"## PREDICTED DATAFRAMES ##:\n{item['pred_pds']}\n")
+            print(f"## GOLD DATAFRAMES ##:\n{item['gold_pds']}\n")
+            print("####################################################")
+    print("Incorrect Instances:")
+    for item in output_results:
+        if item["score"] == 0:
+            print("####################################################")
+            print(f"instance_id: {item['instance_id']}")
+            print(f"## QUESTION ##:\n{item['question']}\n")
+            print(f"## EXTERNAL KNOWLEDGE ##:\n{item['external_knowledge']}\n")
+            print(f"## PREDICTED SQL ##:\n{item['pred_sql']}\n")
+            print(f"## ERROR REASON ##:\n{item['error_info']}\n")
+            print(f"## PREDICTED DATAFRAMES ##:\n{item['pred_pds']}\n")
+            print(f"## GOLD DATAFRAMES ##:\n{item['gold_pds']}\n")
+            print("####################################################")
     return output_results, final_acc
 
 def execute_sql(data_idx, db_file, sql):

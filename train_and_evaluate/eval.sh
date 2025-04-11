@@ -35,4 +35,4 @@ python3 evaluate.py \
     --db_path ./data/spider2_sqlite/databases/ \
     --gold_result_dir ./data/spider2_sqlite/gold_exec_result/ \
     --eval_standard ./data/spider2_sqlite/spider2_sqlite_eval.jsonl \
-    > ./evaluation_results/o3-mini-high_test-spider2/eval_log.txt
+    > ./evaluation_results/o3-mini-high_test-spider2/eval_log_v2.txt
