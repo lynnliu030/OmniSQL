@@ -45,6 +45,7 @@ if __name__ == "__main__":
     parser.add_argument("--ts_db_path", type = str, default = "", help = "test suite database path (required by Spider)")
     parser.add_argument("--gold_result_dir", type = str, help = "gold sql execution results (required by Spider2.0)")
     parser.add_argument("--eval_standard", type = str, help = "evaluation standard (required by Spider2.0)")
+    parser.add_argument("--log_file", type = str, default=None, help = "log file path")
     
     opt = parser.parse_args()
     print(opt)
@@ -65,7 +66,7 @@ if __name__ == "__main__":
                                 opt.gold_file, gs_pred_file, opt.db_path, True)
         # record evaluation results
         gs_acc, _ = evaluate_spider2.evaluate("greedy_search", opt.gold_result_dir, opt.eval_standard, 
-                                opt.gold_file, gs_pred_file, opt.db_path, True)
+                                opt.gold_file, gs_pred_file, opt.db_path, True, opt.log_file)
     elif opt.source == "bird":
         # warm up
         evaluate_bird.run_eval(opt.gold_file, gs_pred_file, opt.db_path, "greedy_search", True)

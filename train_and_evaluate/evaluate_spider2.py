@@ -37,11 +37,10 @@ class TeeOutput:
     def close(self):
         self.file.close()
 
-sys.stdout = TeeOutput('log.txt')
-sys.stderr = sys.stdout
+# sys.stdout = TeeOutput('log.txt')
+# sys.stderr = sys.stdout
 
 TOTAL_GB_PROCESSED = 0.0
-
 
 byte_output_dict = {}
 
@@ -154,7 +153,7 @@ def get_sqlite_result(db_file_path, query, save_dir=None, file_name="result.csv"
     
     return True, None
 
-def evaluate_spider2sql(gold_result_dir, eval_standard_dict, gold, pred_sqls, db_path, temp_dir):
+def evaluate_spider2sql(gold_result_dir, eval_standard_dict, gold, pred_sqls, db_path, temp_dir, log_file=None):
     instance_id2db_id = dict()
     for gt_data in gold:
         instance_id2db_id[gt_data["instance_id"]] = gt_data["db_id"]
@@ -231,29 +230,32 @@ def evaluate_spider2sql(gold_result_dir, eval_standard_dict, gold, pred_sqls, db
     print({item['instance_id']: item['score'] for item in output_results})
     final_acc = sum([item['score'] for item in output_results]) / len(output_results)
     print(f"Final score: {final_acc}")
-    print("Correct Instances:")
-    for item in output_results:
-        if item["score"] == 1:
-            print("####################################################")
-            print(f"instance_id: {item['instance_id']}")
-            print(f"## QUESTION ##\n{item['question']}\n")
-            print(f"## EXTERNAL KNOWLEDGE ##:\n{item['external_knowledge']}\n")
-            print(f"## PREDICTED SQL ##:\n{item['pred_sql']}\n")
-            print(f"## PREDICTED DATAFRAMES ##:\n{item['pred_pds']}\n")
-            print(f"## GOLD DATAFRAMES ##:\n{item['gold_pds']}\n")
-            print("####################################################")
-    print("Incorrect Instances:")
-    for item in output_results:
-        if item["score"] == 0:
-            print("####################################################")
-            print(f"instance_id: {item['instance_id']}")
-            print(f"## QUESTION ##:\n{item['question']}\n")
-            print(f"## EXTERNAL KNOWLEDGE ##:\n{item['external_knowledge']}\n")
-            print(f"## PREDICTED SQL ##:\n{item['pred_sql']}\n")
-            print(f"## ERROR REASON ##:\n{item['error_info']}\n")
-            print(f"## PREDICTED DATAFRAMES ##:\n{item['pred_pds']}\n")
-            print(f"## GOLD DATAFRAMES ##:\n{item['gold_pds']}\n")
-            print("####################################################")
+    if log_file:
+        with open(log_file, 'w') as f:
+            f.write(f"Final score: {final_acc}\n")
+            f.write("Correct Instances:\n")
+            for item in output_results:
+                if item["score"] == 1:
+                    f.write("####################################################\n")
+                    f.write(f"instance_id: {item['instance_id']}\n")
+                    f.write(f"## QUESTION ##\n{item['question']}\n\n")
+                    f.write(f"## EXTERNAL KNOWLEDGE ##:\n{item['external_knowledge']}\n\n")
+                    f.write(f"## PREDICTED SQL ##:\n{item['pred_sql']}\n\n")
+                    f.write(f"## PREDICTED DATAFRAMES ##:\n{item['pred_pds']}\n\n")
+                    f.write(f"## GOLD DATAFRAMES ##:\n{item['gold_pds']}\n\n")
+                    f.write("####################################################\n")
+            f.write("Incorrect Instances:\n")
+            for item in output_results:
+                if item["score"] == 0:
+                    f.write("####################################################\n")
+                    f.write(f"instance_id: {item['instance_id']}\n")
+                    f.write(f"## QUESTION ##:\n{item['question']}\n\n")
+                    f.write(f"## EXTERNAL KNOWLEDGE ##:\n{item['external_knowledge']}\n\n")
+                    f.write(f"## PREDICTED SQL ##:\n{item['pred_sql']}\n\n")
+                    f.write(f"## ERROR REASON ##:\n{item['error_info']}\n\n")
+                    f.write(f"## PREDICTED DATAFRAMES ##:\n{item['pred_pds']}\n\n")
+                    f.write(f"## GOLD DATAFRAMES ##:\n{item['gold_pds']}\n\n")
+                    f.write("####################################################\n")
     return output_results, final_acc
 
 def execute_sql(data_idx, db_file, sql):
@@ -296,7 +298,7 @@ def execute_sqls_parallel(all_db_files, all_sqls, all_execution_results, num_cpu
     pool.close()
     pool.join()
 
-def evaluate(mode, gold_result_dir, eval_standard, gold_file, pred_file, db_path, save_pred_sqls):
+def evaluate(mode, gold_result_dir, eval_standard, gold_file, pred_file, db_path, save_pred_sqls, log_file=False):
     eval_standard_dict = load_jsonl_to_dict(eval_standard)
     gold = json.load(open(gold_file))
     pred = json.load(open(pred_file))
@@ -364,7 +366,8 @@ def evaluate(mode, gold_result_dir, eval_standard, gold_file, pred_file, db_path
             gold,
             pred_sqls,
             db_path,
-            temp_dir
+            temp_dir,
+            log_file
         )
 
         if save_pred_sqls:
