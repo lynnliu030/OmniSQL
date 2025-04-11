@@ -56,7 +56,7 @@ def compare_sql(question_id, db_file, question, ground_truth, pred_sql) :
         predicted_res = cursor.fetchall()
         cursor.execute(ground_truth)
         ground_truth_res = cursor.fetchall()
-        print('Successfully executed')
+        # print('Successfully executed')
         if set(predicted_res) == set(ground_truth_res):
             correctness = 1
         conn.rollback()

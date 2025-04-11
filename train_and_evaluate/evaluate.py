@@ -49,7 +49,7 @@ if __name__ == "__main__":
     opt = parser.parse_args()
     print(opt)
 
-    os.makedirs(os.path.join("results", opt.eval_name), exist_ok=True)
+    os.makedirs(os.path.join("evaluation_results", opt.eval_name), exist_ok=True)
     
     greedy_search_acc_dict = dict()
     pass_at_k_acc_dict = dict()
@@ -88,6 +88,8 @@ if __name__ == "__main__":
     visualize(opt.eval_name, greedy_search_acc_dict, "greedy_search",
         os.path.join("evaluation_results", opt.eval_name, "greedy_search.png"))
     save_evaluation_results(os.path.join("evaluation_results", opt.eval_name, "greedy_search.json"), greedy_search_acc_dict)
+
+    exit(0) # stop here for greedy only
 
     # sampling
     sampling_pred_file = f"results/{opt.eval_name}/sampling.json"
