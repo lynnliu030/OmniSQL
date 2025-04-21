@@ -3,9 +3,13 @@ import json
 import re
 from vllm import LLM, SamplingParams
 from transformers import AutoTokenizer
+from data.process_to_rl_format import fix_input
 
-def parse_response(response):
-    pattern = r"```sql\s*(.*?)\s*```"
+def parse_response(response, use_rl_format=True):
+    if use_rl_format:
+        pattern = r"<solution>(.*?)</solution>"
+    else:
+        pattern = r"```sql\s*(.*?)\s*```"
     
     sql_blocks = re.findall(pattern, response, re.DOTALL)
 
@@ -25,6 +29,7 @@ if __name__ == '__main__':
     parser.add_argument("--tensor_parallel_size", type = int, help = "the number of used GPUs", default = 4)
     parser.add_argument("--n", type = int, help = "the number of generated responses", default = 4)
     parser.add_argument("--temperature", type = float, help = "temperature of llm's sampling", default = 1.0)
+    parser.add_argument("--use_rl_format", type = bool, help = "whether to use rl format, default is True", default = True)
 
     opt = parser.parse_args()
     print(opt)
@@ -83,17 +88,23 @@ if __name__ == '__main__':
         trust_remote_code = True
     )
     
-    chat_prompts = [tokenizer.apply_chat_template(
-        [{"role": "user", "content": data["input_seq"]}],
-        add_generation_prompt = True, tokenize = False
-    ) for data in input_dataset]
+    if opt.use_rl_format:
+        chat_prompts = [tokenizer.apply_chat_template(
+            [{"role": "user", "content": fix_input(data["input_seq"])}],
+            add_generation_prompt = True, tokenize = False
+        ) for data in input_dataset]
+    else:
+        chat_prompts = [tokenizer.apply_chat_template(
+            [{"role": "user", "content": data["input_seq"]}],
+            add_generation_prompt = True, tokenize = False
+        ) for data in input_dataset]
 
     outputs = llm.generate(chat_prompts, sampling_params)
     
     results = []
     for data, output in zip(input_dataset, outputs):
         responses = [o.text for o in output.outputs]
-        sqls  = [parse_response(response) for response in responses]
+        sqls  = [parse_response(response, opt.use_rl_format) for response in responses]
         
         data["responses"] = responses
         data["pred_sqls"] = sqls

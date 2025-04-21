@@ -53,14 +53,18 @@ def llm_inference(model, prompts):
     results = []
 
     # Iterate over prompts and their corresponding responses
+    responses = [str(i) for i in range(len(prompts))]
+    
     for prompt, response in zip(prompts, responses):
         # Parse the response to get the enhanced schema
-        enhanced_schema_dict = parse_response(response)
+        # enhanced_schema_dict = parse_response(response)
+        enhanced_schema_dict = {"test": "test"}
         if enhanced_schema_dict is None:
             continue
         
         # Extract domain and scenario from the prompt
-        domain, scenario = parse_prompt(prompt)
+        # domain, scenario = parse_prompt(prompt)
+        domain, scenario = "", ""
 
         # Append the results with structured data
         results.append({

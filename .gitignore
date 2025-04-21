@@ -1,0 +1,10 @@
+*.log
+data/*
+data*
+*.json.zip
+web_tables.json
+__pycache__/*
+__pycache__
+ckpts 
+ckpts/*
+*.zip

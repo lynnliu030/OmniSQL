@@ -49,9 +49,14 @@ def llm_inference(model, prompts):
     results = []
 
     # Iterate over prompts and their corresponding responses
+    
+    # NOTE(test): just assign responses to a list of random strings as the same length as prompt 
+    responses = [str(i) for i in range(len(prompts))]
+    
     for prompt, response in zip(prompts, responses):
         # Parse the response to extract domain, scenario, and schema
-        domain, scenario, schema = parse_response(response)
+        # domain, scenario, schema = parse_response(response)
+        domain, scenario, schema = "", "", ""
 
         # Filter out invalid responses where any component is missing
         if domain is None or scenario is None or schema is None:

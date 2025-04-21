@@ -118,7 +118,7 @@ def retrieve_relevant_hits(searcher, queries):
     search_results = searcher.batch_search(queries, q_ids, k = 10, threads=60)
     for query, q_id in zip(queries, q_ids):
         hits = search_results[q_id]
-        hits = list(dict.fromkeys(([hit.raw for hit in hits])))
+        hits = list(dict.fromkeys(([hit.lucene_document.get('raw') for hit in hits])))
         hits = [json.loads(hit) for hit in hits]
         query2hits[query] = hits
     

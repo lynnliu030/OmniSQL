@@ -121,7 +121,8 @@ if __name__ == "__main__":
         else:
             print(f"skip {ckpt_id} greedy search")
 
-        if ckpt_id not in major_voting_acc_dict.keys():
+        # Skip this code for now 
+        if False and ckpt_id not in major_voting_acc_dict.keys():
             # sampling
             sampling_pred_file = f"results/{opt.eval_name}/sampling_{ckpt_id}.json"
             sampling_cmd = f"CUDA_VISIBLE_DEVICES={opt.visible_devices} python3 infer.py \

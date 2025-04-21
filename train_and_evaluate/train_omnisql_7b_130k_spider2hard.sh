@@ -6,12 +6,12 @@ CONFIG_FILE="./accelerate_config_7b.yaml"
 PER_DEVICE_TRAIN_BATCH_SIZE=1
 MODEL_PATH="Qwen/Qwen2.5-Coder-7B-Instruct"
 CKPT_NUM=10
-BASE_NAME="omnisql_7b_lr${LR}_epochs${EPOCHS}"
+BASE_NAME="qwencoder_7b_instruct_lr${LR}_epochs${EPOCHS}_filter_domain_spider2_non_simple_moderate_130651"
 CKPT_DIR="./ckpts/$BASE_NAME"
 LOG_DIR="./train_logs/$BASE_NAME"
 # DATASET_DIR="./data/train_bird.json"
 # DATASET_DIR="./data/train_spider.json"
-DATASET_DIR="./data/train_synsql.json"
+DATASET_DIR="./data/train_synsql_filter_in_domain_spider2_non_simple_moderate_130651.json"
 
 accelerate launch --main_process_port 10000 --config_file $CONFIG_FILE train.py \
     --per_device_train_batch_size $PER_DEVICE_TRAIN_BATCH_SIZE \
