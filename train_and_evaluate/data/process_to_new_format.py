@@ -17,10 +17,32 @@ RL_TEMPLATE = (
 
 NEW_TEMPLATE = (
 """
-Your response format MUST follow the template below. 
+Your response format MUST follow the template below.
 <think>
 Your thoughts or/and draft, like working through an exercise on scratch paper. Be as casual and as long as you want until you are confident to generate a correct solution.
 </think>
+<solution>
+```sql
+Final SQL query solution presented to the user.
+```
+</solution>
+"""
+)
+
+NEW_MULTITURN_TEMPLATE = (
+"""
+Your response format MUST follow the template below.
+<think>
+Your thoughts or/and draft, like working through an exercise on scratch paper. Be as casual and as long as you want until you are confident to generate a correct solution.
+</think>
+<sql>
+```sql
+After reasoning, if you find you lack some knowledge or confidence, you can use SQL written here to explore or verify.
+Output from your SQL code will be shown as a dataframe inside <observation>...</observation>.
+You must then continue reasoning on the output with <think>...</think>.
+You may use this SQL tool up to 3 times before providing your final solution.
+```
+</sql>
 <solution>
 ```sql
 Final SQL query solution presented to the user.
@@ -47,13 +69,16 @@ def rl_output_from_base(text: str) -> str:
     think_parts = "\n\n".join(p for p in (before, after) if p)
     return f"<think>{think_parts}</think>\n<solution>{sql}</solution>"
 
-def new_input_from_base(text: str) -> str:
+def new_input_from_base(text: str, multiturn: bool = False) -> str:
     pattern = re.compile(
         r"Output Format:[\s\S]*?Take a deep breath and think step by step to "
         r"find the correct SQL query\.\s*$",
         flags=re.MULTILINE,
     )
-    return pattern.sub(NEW_TEMPLATE, text)
+    if not multiturn:
+        return pattern.sub(NEW_TEMPLATE, text)
+    else:
+        return pattern.sub(NEW_MULTITURN_TEMPLATE, text)
 
 def new_output_from_base(text: str) -> str:
     m = re.search(r"```sql\s*([\s\S]+?)```", text, re.MULTILINE)

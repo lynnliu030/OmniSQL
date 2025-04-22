@@ -4,8 +4,8 @@
 #SBATCH --account=dev-team
 #SBATCH --time=0:30:00          # Maximum runtime
 #SBATCH --gres gpu:2
-#SBATCH --output=/shared/dcli/lshu/BIRD/OmniSQL/train_and_evaluate/logs/sft_eval_stdout.log
-#SBATCH --error=/shared/dcli/lshu/BIRD/OmniSQL/train_and_evaluate/logs/sft_eval_stderr.log
+#SBATCH --output=/shared/dcli/lshu/BIRD/OmniSQL/train_and_evaluate/logs/multiturn_eval_stdout.log
+#SBATCH --error=/shared/dcli/lshu/BIRD/OmniSQL/train_and_evaluate/logs/multiturn_eval_stderr.log
 
 # Load Conda correctly
 source ~/.bashrc

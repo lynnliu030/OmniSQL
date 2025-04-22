@@ -80,12 +80,18 @@ if __name__ == "__main__":
             # greedy decoding
             gs_pred_file = f"results/{opt.eval_name}/greedy_search_{ckpt_id}.json"
             greedy_search_cmd = f"CUDA_VISIBLE_DEVICES={opt.visible_devices} python3 infer.py \
-                --pretrained_model_name_or_path {os.path.join(opt.output_ckpt_dir, ckpt_id)} \
+                --pretrained_model_name_or_path qwen/Qwen2.5-Coder-7B-Instruct \
                 --input_file {opt.input_file} \
                 --output_file {gs_pred_file} \
                 --tensor_parallel_size {opt.tensor_parallel_size} \
                 --n 1 \
-                --temperature 0.0"
+                --temperature 0.0 \
+                --prompt_format new \
+                --use_multiturn \
+                --dataset {opt.source} \
+                --db_path {opt.db_path} \
+                --gold_file {opt.gold_file} \
+                "
             os.system(greedy_search_cmd)
 
             # evaluate greedy search

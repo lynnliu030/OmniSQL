@@ -20,11 +20,11 @@ models = [
     # "/shared/dcli/lshu/BIRD/OmniSQL/train_and_evaluate/ckpts/qwencoder_7b_instruct_lr2e-5_epochs2_filter_in_domain_spider2_highly_complex_55k/ckpt-109",
     # "/shared/dcli/lshu/BIRD/OmniSQL/train_and_evaluate/ckpts/qwencoder_7b_instruct_lr2e-5_epochs2_filter_15k_in_domain_spider2_highly_complex/ckpt-60",
     # "/shared/dcli/lshu/BIRD/RLEF/ckpt/SWE-RL-BIRD/TEST-Round2-startRL1ckpt510-High-Complex-In-Domain-BIRD-55k-b256-n8-mrl24k/global_step_500/actor/huggingface",
-    "/shared/dcli/lshu/BIRD/OmniSQL/train_and_evaluate/ckpts/FORMAT_qwencoder_7b_instruct_lr2e-5_epochs2_filter_domain_spider2_non_simple_moderate_130651/ckpt-510",
+    # "/shared/dcli/lshu/BIRD/OmniSQL/train_and_evaluate/ckpts/FORMAT_qwencoder_7b_instruct_lr2e-5_epochs2_filter_domain_spider2_non_simple_moderate_130651/ckpt-510",
     # "seeklhy/OmniSQL-7B",
     # "seeklhy/OmniSQL-14B",
     # "seeklhy/OmniSQL-32B",
-    # "qwen/Qwen2.5-Coder-7B-Instruct",
+    "qwen/Qwen2.5-Coder-7B-Instruct",
     # "qwen/Qwen2.5-Coder-14B-Instruct",
     # "qwen/Qwen2.5-Coder-32B-Instruct",
     # "qwen/Qwen2.5-7B-Instruct",
@@ -71,11 +71,12 @@ for model in models:
     # Model name will be "round_2_ckpt645"
     
     if "DeepSeek-R1-Distill-Qwen-7B" not in model:
+        model_name = "MULTITURN_QwenCoder7B"
         # model_name = extract_model_name(model)
         # model_name = "round_1_ckpt510"
         # model_name = "QwenCoder7B-SFT-13k-downsample-Domain-Hard"
         # model_name = "RL-round-2-55k-high-complex-ckpt500"
-        model_name = "SFT_rl-format_130k_ckpt510"
+        # model_name = "SFT_rl-format_130k_ckpt510"
         # model_name = "15k-high-complex-ckpt60"
         # if "ckpt-36" in model:
         #     model_name = "QwenCoder7B-SFT-130k-13t-96c-8k"
