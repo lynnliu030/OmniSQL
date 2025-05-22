@@ -1,3 +1,10 @@
+# SkyRL-SQL Evaluation Code
+
+This repository is a fork of the [OmniSQL](https://github.com/RUCKBReasoning/OmniSQL) repository with evaluation files for SkyRL-SQL. For the evaluation instructions, please see [evaluate_skysql](./evaluate_skysql/README.md).
+
+
+the original README is below:
+
 # OmniSQL - Synthesizing High-quality Text-to-SQL Data at Scale
 
 ## Introduction
