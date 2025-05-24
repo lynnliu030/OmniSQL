@@ -19,7 +19,7 @@ You can easily reproduce our evaluation results as follows:
    We use a custom format of the evaluation datasets for evaluation. You can download the dataset from [here](https://huggingface.co/datasets/NovaSky-AI/SkyRL-SQL-eval/tree/main/).
 
 ```bash
-huggingface-cli download NovaSky-AI/SkyRL-SQL-eval NovaSky-AI/SkyRL-SQL-eval skyrl_eval --repo-type dataset
+huggingface-cli download NovaSky-AI/SkyRL-SQL-eval --local-dir skyrl_sql_eval --repo-type dataset
 ```
 
 Once done you should have the following folders: 
